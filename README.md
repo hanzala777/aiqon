@@ -6,7 +6,7 @@ Predicts, **48 hours before a vessel's scheduled arrival**, whether the port cal
 2. a **confidence score** (how far to trust that probability: model agreement, data completeness, similarity to past situations),
 3. the **factors driving the prediction** in plain language, with a **recommended action** and an expected anchorage-wait range.
 
-> Aiqon AI Internship take-home. Technical report: [`reports/report.pdf`](reports/report.pdf) (source: [`reports/report.md`](reports/report.md)).
+> Aiqon take-home. Technical report: [`reports/report.pdf`](reports/report.pdf) (source: [`reports/report.md`](reports/report.md)).
 
 ```
 HIGH congestion risk (>99%, confidence 90%). Main drivers: heavy traffic: 22 vessels due in the 48h before
