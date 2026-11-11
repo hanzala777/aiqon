@@ -1,0 +1,197 @@
+{
+  "test_size": 75,
+  "test_prevalence": 0.267,
+  "decision_threshold": 0.27,
+  "models": {
+    "logreg_production": {
+      "roc_auc": 0.873,
+      "roc_auc_95ci": [
+        0.761,
+        0.958
+      ],
+      "pr_auc": 0.81,
+      "brier": 0.114,
+      "precision": 0.812,
+      "recall": 0.65,
+      "f1": 0.722
+    },
+    "lgbm_challenger": {
+      "roc_auc": 0.82,
+      "roc_auc_95ci": [
+        0.696,
+        0.926
+      ],
+      "pr_auc": 0.71,
+      "brier": 0.142,
+      "precision": 0.625,
+      "recall": 0.5,
+      "f1": 0.556
+    },
+    "rule_of_thumb": {
+      "roc_auc": 0.832,
+      "roc_auc_95ci": [
+        0.721,
+        0.929
+      ],
+      "pr_auc": 0.704,
+      "precision": 0.571,
+      "recall": 0.8,
+      "f1": 0.667
+    }
+  },
+  "rolling_origin_cv_auc": {
+    "logreg": {
+      "mean": 0.861,
+      "std": 0.053,
+      "folds": [
+        0.77,
+        0.833,
+        0.911,
+        0.898,
+        0.896
+      ]
+    },
+    "lgbm": {
+      "mean": 0.812,
+      "std": 0.067,
+      "folds": [
+        0.726,
+        0.757,
+        0.911,
+        0.861,
+        0.807
+      ]
+    },
+    "rule": {
+      "mean": 0.814,
+      "std": 0.04,
+      "folds": [
+        0.747,
+        0.823,
+        0.852,
+        0.794,
+        0.853
+      ]
+    }
+  },
+  "operational_cost_test": {
+    "model_at_threshold": 76,
+    "rule_of_thumb": 64,
+    "never_act": 200,
+    "always_act": 110,
+    "costs": {
+      "missed_delay": 10,
+      "false_alarm": 2
+    },
+    "model_minus_rule_95ci": [
+      -20.0,
+      52.0
+    ]
+  },
+  "wait_regression": {
+    "mae_p50_hours": 4.89,
+    "mae_baseline_median_hours": 8.08,
+    "p10_p90_coverage": 0.667
+  },
+  "by_port": {
+    "HUB": {
+      "n": 28,
+      "prevalence": 0.11,
+      "roc_auc": 0.587,
+      "recall": 0.33
+    },
+    "MID_A": {
+      "n": 19,
+      "prevalence": 0.42,
+      "roc_auc": 0.955,
+      "recall": 0.88
+    },
+    "MID_B": {
+      "n": 10,
+      "prevalence": 0.2,
+      "roc_auc": 0.938,
+      "recall": 0.5
+    },
+    "SML_A": {
+      "n": 10,
+      "prevalence": 0.4,
+      "roc_auc": 0.833,
+      "recall": 0.75
+    },
+    "SML_B": {
+      "n": 8,
+      "prevalence": 0.38,
+      "roc_auc": 0.867,
+      "recall": 0.33
+    }
+  },
+  "by_storm_during_stay": {
+    "storm": {
+      "n": 8,
+      "prevalence": 1.0,
+      "roc_auc": null,
+      "recall": 0.75
+    },
+    "no_storm": {
+      "n": 67,
+      "prevalence": 0.18,
+      "roc_auc": 0.877,
+      "recall": 0.58
+    }
+  },
+  "confidence_validation": [
+    {
+      "conf_band": "low",
+      "n": 25,
+      "accuracy": 0.76,
+      "brier": 0.199,
+      "mean_conf": 50.26
+    },
+    {
+      "conf_band": "medium",
+      "n": 25,
+      "accuracy": 0.88,
+      "brier": 0.105,
+      "mean_conf": 83.088
+    },
+    {
+      "conf_band": "high",
+      "n": 25,
+      "accuracy": 0.96,
+      "brier": 0.038,
+      "mean_conf": 97.116
+    }
+  ],
+  "global_factor_importance": {
+    "traffic": 1.885,
+    "weather": 0.591,
+    "port": 0.567,
+    "capacity": 0.347,
+    "vessel": 0.276,
+    "season": 0.248,
+    "timing": 0.142,
+    "labour": 0.113
+  },
+  "top_lgbm_interactions": [
+    {
+      "pair": "forecast_wind_max x port_hist_delay_rate",
+      "mean_abs_shap": 0.0682
+    },
+    {
+      "pair": "sched_arrivals_ahead x window_arrivals_per_berth",
+      "mean_abs_shap": 0.059
+    },
+    {
+      "pair": "pressure_index x window_arrivals_per_berth",
+      "mean_abs_shap": 0.0522
+    },
+    {
+      "pair": "pressure_index x port_hist_delay_rate",
+      "mean_abs_shap": 0.0515
+    },
+    {
+      "pair": "window_arrivals_per_berth x port_hist_delay_rate",
+      "mean_abs_shap": 0.0468
+    }
+  ]
+}

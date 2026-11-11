@@ -1,0 +1,41 @@
+{
+  "n_train": 350,
+  "n_val": 75,
+  "n_test": 75,
+  "train_period": [
+    "2025-01-24 01:00:13.883421434",
+    "2025-09-12 17:20:29.084947605"
+  ],
+  "test_period": [
+    "2025-11-03 16:04:38.857459314",
+    "2025-12-27 21:26:12.977180448"
+  ],
+  "rule_pressure_threshold": 3.5,
+  "cost_threshold": 0.27,
+  "theoretical_threshold": 0.16666666666666666,
+  "logreg_coefficients_standardised": {
+    "queue_at_prediction": 1.017,
+    "berths_occupied_at_prediction": -0.423,
+    "berth_util_7d": 0.397,
+    "sched_arrivals_ahead": 1.373,
+    "sched_arrivals_window": 0.047,
+    "capacity_berths": -0.38,
+    "pressure_index": 0.723,
+    "window_arrivals_per_berth": 0.246,
+    "vessel_teu": -0.34,
+    "forecast_wind_max": 0.114,
+    "forecast_storm": 0.451,
+    "labor_alert": 0.249,
+    "port_hist_delay_rate": -0.353,
+    "eta_hour": 0.057,
+    "eta_weekend": -0.204,
+    "month_sin": -0.005,
+    "month_cos": -0.144,
+    "peak_season": 0.188,
+    "port_HUB": -0.361,
+    "port_MID_A": 0.072,
+    "port_MID_B": 0.109,
+    "port_SML_A": 0.044,
+    "port_SML_B": 0.27
+  }
+}

@@ -1,0 +1,46 @@
+# Central configuration for the port-congestion project.
+# Every number here is an explicit modelling assumption (see report, "Assumptions").
+
+seed: 42
+
+simulation:
+  start_date: "2025-01-01"
+  days: 365
+  warmup_days: 21            # discard first weeks so queues start from a realistic state
+  n_records: 500             # labelled port calls sampled for the modelling dataset
+  eta_noise_sd_hours: 6.0    # actual arrival = scheduled ETA + N(0, sd)
+  forecast_wind_sd_knots: 4.0  # 48h wind-forecast error
+  missing_rate: 0.05         # share of values dropped at random in feed-type fields
+  storm_wind_knots: 32       # crane wind limit: above this, berth operations halt
+  severe_storm_wind_knots: 40  # whole-day shutdown
+  night_productivity: 0.8    # 00:00-06:00 productivity factor
+  labor_productivity: 0.6    # productivity during labour action
+  labor_episodes_per_port: 2 # per year, each 2-4 days
+  labor_alert_recall: 0.85   # P(alert issued | disruption overlaps arrival)
+  labor_false_alert: 0.02    # P(alert issued | no disruption)
+  surge_episodes_per_port: 6 # schedule-bunching episodes per year, 3 days each
+  surge_multiplier: 1.5
+
+# Fictional ports with different scale / productivity / regional weather.
+ports:
+  HUB:   {name: "Harbor Hub",      berths: 12, mean_teu: 6000, teu_per_hour: 120, target_util: 0.65, region: north}
+  MID_A: {name: "Midport Alpha",   berths: 7,  mean_teu: 3000, teu_per_hour: 80,  target_util: 0.68, region: north}
+  MID_B: {name: "Midport Bravo",   berths: 6,  mean_teu: 3000, teu_per_hour: 75,  target_util: 0.70, region: south}
+  SML_A: {name: "Smallport Coral", berths: 4,  mean_teu: 1500, teu_per_hour: 50,  target_util: 0.69, region: south}
+  SML_B: {name: "Smallport Delta", berths: 3,  mean_teu: 1500, teu_per_hour: 45,  target_util: 0.63, region: south}
+
+label:
+  # congested = excess port time > threshold, where
+  # excess = anchorage wait + berth overrun beyond the terminal's planned service time
+  excess_threshold_hours: 12
+
+prediction:
+  horizon_hours: 48              # prediction issued 48h before scheduled ETA
+
+split:
+  train_frac: 0.70               # chronological split on scheduled ETA
+  val_frac: 0.15                 # used for calibration + threshold selection
+
+decision:
+  cost_missed_delay: 10          # relative cost of an unanticipated delay (penalties, missed connections)
+  cost_false_alarm: 2            # relative cost of an unnecessary mitigation (buffer, re-timing)

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Tool caches
+.pytest_cache/
+.ipynb_checkpoints/
+.mypy_cache/
+.ruff_cache/
+catboost_info/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Editors / OS
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and scratch files
+*.log
+*.tmp
+
+# The assignment brief is Aiqon's document, not ours to redistribute
+Aiqon_Take_Home_Assignment_*.pdf
+
+# Personal study guide (delete this line to publish it with the repo)
+docs/
+
+# NOTE: data/, models/ and reports/ are committed on purpose so the
+# Streamlit demo runs without re-running the pipeline (see README).

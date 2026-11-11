@@ -1,0 +1,59 @@
+{
+  "seed": 42,
+  "overrides": {},
+  "vessels_simulated_total": 10723,
+  "records_sampled": 500,
+  "congestion_rate_full": 0.241,
+  "congestion_rate_sample": 0.232,
+  "port_median_turnaround_h": {
+    "HUB": 25.0,
+    "MID_A": 21.3,
+    "MID_B": 24.9,
+    "SML_A": 20.7,
+    "SML_B": 24.9
+  },
+  "ports": {
+    "HUB": {
+      "vessels_simulated": 3213,
+      "mean_berth_utilisation": 0.698,
+      "max_queue": 21,
+      "storm_hours": 96,
+      "labor_hours": 144
+    },
+    "MID_A": {
+      "vessels_simulated": 2528,
+      "mean_berth_utilisation": 0.728,
+      "max_queue": 25,
+      "storm_hours": 96,
+      "labor_hours": 120
+    },
+    "MID_B": {
+      "vessels_simulated": 2148,
+      "mean_berth_utilisation": 0.775,
+      "max_queue": 18,
+      "storm_hours": 204,
+      "labor_hours": 96
+    },
+    "SML_A": {
+      "vessels_simulated": 1697,
+      "mean_berth_utilisation": 0.736,
+      "max_queue": 24,
+      "storm_hours": 204,
+      "labor_hours": 144
+    },
+    "SML_B": {
+      "vessels_simulated": 1137,
+      "mean_berth_utilisation": 0.72,
+      "max_queue": 23,
+      "storm_hours": 204,
+      "labor_hours": 120
+    }
+  },
+  "true_causal_drivers": [
+    "arrival pressure vs berth capacity (scheduled arrivals, current queue, utilisation)",
+    "storms halting berth operations (forecast wind is a noisy proxy)",
+    "labour action reducing productivity (alert is a noisy proxy)",
+    "seasonal / weekday arrival-rate variation and schedule surges",
+    "vessel size (longer berth occupation -> more exposure to storm / labour slowdowns)"
+  ]
+}
