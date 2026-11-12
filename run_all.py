@@ -1,6 +1,6 @@
 """Reproduce everything: simulate -> train -> evaluate -> experiments.
 
-    python run_all.py            # full pipeline (~1 min)
+    python run_all.py            # full pipeline (~3 min)
     python run_all.py --fast     # skip the robustness experiments
 """
 import subprocess

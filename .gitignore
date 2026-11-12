@@ -36,3 +36,6 @@ docs/
 
 # NOTE: data/, models/ and reports/ are committed on purpose so the
 # Streamlit demo runs without re-running the pipeline (see README).
+
+# Internal QA tracker (kept locally, not part of the submission)
+QA_Test_Report.xlsx

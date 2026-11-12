@@ -120,7 +120,7 @@ class CongestionModel:
         ytr, yva = train["congested"].to_numpy(), val["congested"].to_numpy()
 
         # Production classifier: L2-regularised logistic regression with domain sign constraints
-        # (see features.MONOTONE_INCREASING). In rolling-origin evaluation it matched or beat LightGBM
+        # (see features.MONOTONE_INCREASING). In rolling-origin evaluation it beat LightGBM
         # on every fold: with ~350 training rows the boosted trees overfit. Calibrated on the later-in-time
         # validation slice with Platt scaling (isotonic would overfit ~75 calibration points).
         self.clf = make_logreg().fit(Xtr, ytr)

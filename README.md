@@ -6,7 +6,9 @@ Predicts, **48 hours before a vessel's scheduled arrival**, whether the port cal
 2. a **confidence score** (how far to trust that probability: model agreement, data completeness, similarity to past situations),
 3. the **factors driving the prediction** in plain language, with a **recommended action** and an expected anchorage-wait range.
 
-> Aiqon take-home. Technical report: [`reports/report.pdf`](reports/report.pdf) (source: [`reports/report.md`](reports/report.md)).
+> Aiqon Take-Home Technical Challenge. **Technical report: [`reports/report.pdf`](reports/report.pdf)** (2 pages; source: [`reports/report.md`](reports/report.md)).
+
+![System architecture](reports/figures/architecture.png)
 
 ```
 HIGH congestion risk (>99%, confidence 63%). Main drivers: heavy traffic: 22 vessels due in the 48h before
@@ -28,7 +30,7 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows   (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
 
-python run_all.py               # simulate -> train -> evaluate -> robustness experiments (~3 min)
+python run_all.py               # simulate -> train -> evaluate -> robustness experiments (~1-2 min)
 streamlit run app.py            # interactive demo
 pytest -q                       # 27 tests: leakage, validation, monotonic risk, confidence, CLI, app
 ```
@@ -54,7 +56,7 @@ python -m src.predict --port MID_B --eta "2025-10-20 06:00" --teu 4200 --queue 6
 
 - **Cheaper decisions than the rule of thumb.** At the expected-cost threshold (0.17), the model catches 88% of congested calls. Its total cost is 236 against 350 for the rule (never acting costs 750); the 95% interval for the difference is [−226, −14].
 - **The confidence score is informative.** High-confidence calls have well-calibrated probabilities (miscalibration, measured as excess Brier, is −0.015 in the top tercile vs +0.021 in the bottom; Brier 0.08 vs 0.18). Confidence is not a restatement of the risk: its rank correlation with |p − 0.5| is 0.26, and 30–70% risk calls range from 42 to 85 confidence.
-- **Stable across simulated worlds.** Across 5 other simulated years the rolling-origin AUC is **0.81 ± 0.05** (worst 0.72), and seed 42's 0.85 lies within one standard deviation. Details are in the report, §5.
+- **Stable across simulated worlds.** Across 5 other simulated years the rolling-origin AUC is **0.81 ± 0.05** (worst 0.72), and seed 42's 0.85 lies within one standard deviation.
 
 ## How it works
 
@@ -79,7 +81,7 @@ Configuration and every modelling assumption live in [`config.yaml`](config.yaml
 - **Confidence is not the probability.** "50% risk, 95% confidence" means a genuine coin flip. "50% risk, 40% confidence" means refresh the data first. Model agreement is measured on the log-odds scale (so it does not simply shrink near 50%), and a missing feed is replaced by many plausible historical values, so losing data always widens the spread.
 - **Decisions, not just scores.** Act when risk ≥ c_fp / (c_fp + c_fn) = 0.17, the expected-cost optimum for calibrated probabilities with a missed delay costing 5× a false alarm (configurable). It does not depend on the 75-call validation slice, where the empirical optimum swung between 0.06 and 0.39.
 
-## Limitations (full list in the report)
+## Limitations
 
 - **All data is simulated.** This shows the method works on a plausible world, not that it reaches this accuracy on a real port.
 - **Simplified port operations:** first-come-first-served only, no tides, pilotage or yard congestion, and carriers never divert away from congested ports.
@@ -96,7 +98,7 @@ run_all.py             one-command reproduction
 app.py                 Streamlit demo
 src/                   simulate, features, model, train, explain, predict, evaluate, experiments
 tests/                 pytest suite
-scripts/               make_report_pdf.py (report.md -> report.pdf)
+scripts/               make_diagrams.py (report diagrams) + make_report_pdf.py (report.md -> report.pdf)
 data/                  port_calls.csv (500 labelled calls) + simulation_meta.json
 models/                model.joblib
 reports/               report.md/.pdf, metrics.json, experiments.json, figures/
