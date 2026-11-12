@@ -1,4 +1,4 @@
-﻿"""Synthetic port-call generator based on an hourly multi-berth FCFS queue simulation.
+"""Synthetic port-call generator based on an hourly multi-berth FCFS queue simulation.
 
 Why a queue simulation (instead of `label = f(features) + noise`)?
 Waiting time *emerges* from berth occupancy, arrival bunching, weather shutdowns and labour

@@ -23,9 +23,58 @@ RAW_INPUTS = ["port", "capacity_berths", "sched_eta", "vessel_teu", "queue_at_pr
 
 STORM_FORECAST_KNOTS = 30  # forecast slightly below the 32 kn crane limit -> "storm risk"
 
+# Domain knowledge: more of any of these can never LOWER congestion risk. The production logistic
+# regression constrains their coefficients to be >= 0. Without the constraint, correlated inputs
+# picked up opposite signs in 500 records (e.g. "more berths occupied -> lower risk", and vessel
+# size acting as a proxy for port size: "bigger ship -> lower risk").
+MONOTONE_INCREASING = ["queue_at_prediction", "berths_occupied_at_prediction", "berth_util_7d",
+                       "sched_arrivals_ahead", "sched_arrivals_window", "pressure_index",
+                       "window_arrivals_per_berth", "vessel_teu", "forecast_wind_max", "forecast_storm",
+                       "labor_alert", "port_hist_delay_rate", "peak_season"]
+
+
+def validate_raw(df: pd.DataFrame) -> None:
+    """Reject impossible inputs with a clear message instead of silently predicting on them.
+
+    NaN is allowed only in the live-feed fields (FEED_FIELDS): a missing feed is a normal outage.
+    """
+    absent = [c for c in RAW_INPUTS if c not in df.columns]
+    if absent:
+        raise ValueError(f"invalid input: missing column(s) {absent}")
+    errors = []
+    unknown = sorted(set(df["port"].astype(str)) - set(PORTS))
+    if unknown:
+        errors.append(f"unknown port code(s) {unknown}; expected one of {PORTS}")
+    try:
+        pd.to_datetime(df["sched_eta"])
+    except (ValueError, TypeError):
+        errors.append("sched_eta is not a valid date-time (e.g. '2025-12-20 06:00')")
+    num = {c: pd.to_numeric(df[c], errors="coerce") for c in RAW_INPUTS if c not in ("port", "sched_eta")}
+    for c, s in num.items():
+        if c not in FEED_FIELDS and s.isna().any():
+            errors.append(f"{c} is required (got a missing or non-numeric value)")
+
+    def check(mask, msg):
+        if bool(mask.any()):
+            errors.append(msg)
+
+    cap = num["capacity_berths"]
+    check(cap <= 0, "capacity_berths must be > 0")
+    check(num["vessel_teu"] <= 0, "vessel_teu must be > 0")
+    for c in ("queue_at_prediction", "berths_occupied_at_prediction", "sched_arrivals_ahead", "sched_arrivals_window"):
+        check(num[c] < 0, f"{c} cannot be negative")
+    check(num["berths_occupied_at_prediction"] > cap, "berths_occupied_at_prediction cannot exceed the port's berth count")
+    for c in ("berth_util_7d", "port_hist_delay_rate"):
+        check((num[c] < 0) | (num[c] > 1), f"{c} must be a share between 0 and 1")
+    check((num["forecast_wind_max"] < 0) | (num["forecast_wind_max"] > 150), "forecast_wind_max must be 0-150 knots")
+    check(num["labor_alert"].notna() & ~num["labor_alert"].isin([0, 1]), "labor_alert must be 0 or 1")
+    if errors:
+        raise ValueError("invalid input: " + "; ".join(errors))
+
 
 def engineer(df: pd.DataFrame) -> pd.DataFrame:
-    """Raw observables -> model features (no fitting, row-wise only)."""
+    """Raw observables -> model features (no fitting, row-wise only). Inputs are validated first."""
+    validate_raw(df)
     eta = pd.to_datetime(df["sched_eta"])
     cap = df["capacity_berths"].astype(float)
     X = pd.DataFrame(index=df.index)

@@ -3,7 +3,8 @@
 1. Label-definition sensitivity: congestion threshold 6h / 12h / 24h of excess port time.
 2. Data-quality stress: more missing feed data, noisier ETAs, both.
 3. Seed variance: the whole pipeline (simulate -> train -> test) on 5 different random worlds,
-   to show how much the headline numbers move by chance alone.
+   to show how much the headline numbers move by chance alone. Reported both for the 75-call
+   hold-out and for the pooled rolling-origin AUC (250 out-of-time calls, the primary metric).
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ import warnings
 import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 
+from src.evaluate import rolling_origin_auc
 from src.simulate import ROOT, load_config, simulate
 from src.train import run
 
@@ -54,16 +56,17 @@ def main():
     seeds = {}
     for s in (1, 2, 3, 4, 5):
         df, _ = simulate(cfg, seed=s)
-        seeds[s] = score(df, cfg, seed=s)
+        seeds[s] = {**score(df, cfg, seed=s), "auc_logreg_pooled": rolling_origin_auc(df, cfg, seed=s)}
         print("seed", s, seeds[s])
     agg = {k: {"mean": round(float(np.mean([v[k] for v in seeds.values()])), 3),
                "std": round(float(np.std([v[k] for v in seeds.values()])), 3)}
-           for k in ["prevalence", "auc_logreg", "auc_lgbm", "auc_rule"]}
-    R["seed_variance"] = {"per_seed": seeds, "summary": agg}
+           for k in ["prevalence", "auc_logreg", "auc_lgbm", "auc_rule", "auc_logreg_pooled"]}
+    R["seed_variance"] = {"per_seed": seeds, "summary": agg,
+                          "seed42_auc_logreg_pooled": rolling_origin_auc(base, cfg)}
 
     with open(ROOT / "reports" / "experiments.json", "w", encoding="utf-8") as f:
         json.dump(R, f, indent=2)
-    print(json.dumps(agg, indent=1))
+    print(json.dumps({**agg, "seed42_pooled": R["seed_variance"]["seed42_auc_logreg_pooled"]}, indent=1))
 
 
 if __name__ == "__main__":

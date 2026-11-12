@@ -27,10 +27,20 @@ def load_model(path=None):
 
 def build_row(model, port, eta, teu, queue=None, occupied=None, ahead=None, window=None,
               util7d=None, wind=None, labor=0, hist=None) -> pd.Series:
+    """Assemble one raw input row. Raises ValueError on an unknown port or unparseable ETA; value
+    ranges are checked by features.validate_raw when the row is scored."""
+    if port not in model.port_snapshots_:
+        raise ValueError(f"invalid input: unknown port {port!r}; expected one of {sorted(model.port_snapshots_)}")
+    try:
+        eta_ts = pd.Timestamp(eta)
+    except (ValueError, TypeError):
+        raise ValueError(f"invalid input: ETA {eta!r} is not a date-time; use e.g. '2025-12-20 06:00'") from None
+    if pd.isna(eta_ts):
+        raise ValueError("invalid input: ETA is required")
     snap = model.port_snapshots_[port]
     nan = np.nan
     return pd.Series({
-        "port": port, "capacity_berths": snap["capacity_berths"], "sched_eta": pd.Timestamp(eta),
+        "port": port, "capacity_berths": snap["capacity_berths"], "sched_eta": eta_ts,
         "vessel_teu": teu,
         "queue_at_prediction": nan if queue is None else queue,
         "berths_occupied_at_prediction": nan if occupied is None else occupied,
@@ -39,7 +49,7 @@ def build_row(model, port, eta, teu, queue=None, occupied=None, ahead=None, wind
         "sched_arrivals_window": snap["sched_arrivals_window"] if window is None else window,
         "port_hist_delay_rate": snap["port_hist_delay_rate"] if hist is None else hist,
         "forecast_wind_max": nan if wind is None else wind,
-        "labor_alert": int(labor),
+        "labor_alert": labor,
     })
 
 
@@ -54,20 +64,23 @@ def main():
     ap.add_argument("--window", type=float, help="vessels scheduled within +/-24h of ETA")
     ap.add_argument("--util7d", type=float, help="7-day berth utilisation (0-1)")
     ap.add_argument("--wind", type=float, help="forecast max wind (knots) for arrival window")
-    ap.add_argument("--labor", type=int, default=0, help="1 if a labour-action alert is active")
+    ap.add_argument("--labor", type=int, default=0, choices=[0, 1], help="1 if a labour-action alert is active")
     ap.add_argument("--hist", type=float, help="share of calls delayed >12h at this port, last 30 days")
     ap.add_argument("--json", action="store_true", help="print full JSON output")
     a = ap.parse_args()
 
     model = load_model()
-    row = build_row(model, a.port, a.eta, a.teu, a.queue, a.occupied, a.ahead, a.window,
-                    a.util7d, a.wind, a.labor, a.hist)
-    res = explain_row(model, row)
+    try:  # invalid ETA / out-of-range values -> clean usage error (exit code 2), no traceback
+        row = build_row(model, a.port, a.eta, a.teu, a.queue, a.occupied, a.ahead, a.window,
+                        a.util7d, a.wind, a.labor, a.hist)
+        res = explain_row(model, row)
+    except ValueError as e:
+        ap.error(str(e))
     if a.json:
         print(json.dumps(res, indent=2, default=float))
         return
     print("\n" + res["summary"])
-    print(f"\nDecision threshold (cost-optimal): {res['decision_threshold']:.2f} -> "
+    print(f"\nDecision threshold (expected-cost optimal): {res['decision_threshold']:.2f} -> "
           f"{'ACTION RECOMMENDED' if res['action_recommended'] else 'no action needed'}")
     print("\nRisk drivers (log-odds contribution):")
     for d in res["drivers"]:

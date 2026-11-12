@@ -1,4 +1,4 @@
-﻿"""Model training: chronological split, baselines, calibrated logistic regression (production),
+"""Model training: chronological split, baselines, calibrated logistic regression (production),
 LightGBM challenger, confidence components and quantile wait-time models.
 
 Outputs
@@ -48,7 +48,9 @@ def run(df: pd.DataFrame, cfg: dict, seed: int = 0):
             "train_period": [str(train.sched_eta.min()), str(train.sched_eta.max())],
             "test_period": [str(test.sched_eta.min()), str(test.sched_eta.max())],
             "rule_pressure_threshold": rule.threshold_,
-            "cost_threshold": model.threshold_, "theoretical_threshold": model.theoretical_threshold_,
+            "decision_threshold": model.threshold_, "theoretical_threshold": model.theoretical_threshold_,
+            "val_cost_threshold_for_reference": model.val_cost_threshold_,
+            "wait_interval_conformal_adjustment_hours": round(model.wait_conformal_, 3),
             "logreg_coefficients_standardised": dict(zip(model.prep.feature_names_,
                                                          np.round(model.clf[-1].coef_[0], 3).tolist()))}
     return model, out, info

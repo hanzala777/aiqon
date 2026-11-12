@@ -8,7 +8,6 @@ import pandas as pd
 import streamlit as st
 
 from src.explain import explain_row
-from src.features import FEED_FIELDS
 from src.predict import build_row
 from src.simulate import ROOT
 from src.train import chrono_split, load_data
@@ -66,7 +65,7 @@ def show_result(res):
     c3.metric("Expected anchorage wait", f"{w['wait_p50']:.0f} h", f"80% range {w['wait_p10']:.0f}-{w['wait_p90']:.0f} h",
               delta_color="off")
     c4.metric("Decision", "ACT" if res["action_recommended"] else "Monitor",
-              f"threshold {res['decision_threshold']:.2f} (cost-optimal)", delta_color="off")
+              f"threshold {res['decision_threshold']:.2f} (expected-cost optimal)", delta_color="off")
     st.info(res["summary"])
     left, right = st.columns([3, 2])
     with left:
@@ -79,7 +78,7 @@ def show_result(res):
                 st.markdown(f"- {a}")
         st.markdown("**Confidence breakdown**")
         cc = res["confidence_components"]
-        st.markdown(f"- Model agreement (20 bootstrap models): **{cc['agreement']:.0%}**\n"
+        st.markdown(f"- Model agreement (20 bootstrap models x plausible values of missing feeds): **{cc['agreement']:.0%}**\n"
                     f"- Live data completeness: **{cc['completeness']:.0%}**\n"
                     f"- Similarity to training data: **{cc['familiarity']:.0%}**")
         for c in res["caveats"]:
@@ -117,10 +116,15 @@ with tab1:
         w_on = d4.checkbox("Weather forecast", s["wind"] is not None)
         wind = d4.slider("Max wind forecast (kn)", 0, 60, int(s["wind"] or 18))
         go = st.form_submit_button("Predict", type="primary")
-    row = build_row(model, port, eta, teu, queue if q_on else None, occupied if o_on else None, ahead, window,
-                    util if u_on else None, wind if w_on else None, int(labor))
-    st.session_state["last_inputs"] = dict(eta=eta, teu=teu, wind=wind if w_on else None, labor=int(labor))
-    show_result(explain_row(model, row))
+    try:  # malformed ETA or impossible values -> friendly message instead of a stack trace
+        row = build_row(model, port, eta, teu, queue if q_on else None, occupied if o_on else None, ahead, window,
+                        util if u_on else None, wind if w_on else None, int(labor))
+        res1 = explain_row(model, row)
+    except ValueError as e:
+        st.error(f"Cannot predict: {str(e).removeprefix('invalid input: ')}")
+    else:
+        st.session_state["last_inputs"] = dict(eta=eta, teu=teu, wind=wind if w_on else None, labor=int(labor))
+        show_result(res1)
 
 # ------------------------------------------------------------------ tab 2
 with tab2:
@@ -162,15 +166,17 @@ with tab3:
 
 # ------------------------------------------------------------------ tab 4
 with tab4:
-    m = metrics["models"]
-    st.markdown(f"Test set: **{metrics['test_size']} calls**, {metrics['test_prevalence']:.0%} congested. "
-                "Chronological split (train on the past, test on the most recent calls).")
+    ro, m = metrics["rolling_origin"], metrics["models"]
+    keys = ["logreg_production", "lgbm_challenger", "rule_of_thumb"]
+    st.markdown(f"Primary evaluation: **rolling-origin**, {ro['n_calls']} out-of-time calls ({ro['folds']} folds, "
+                f"{ro['prevalence']:.0%} congested): the full system is refitted on the past and predicts the next "
+                f"slice of the timeline. Final hold-out: the production model on the last {metrics['test_size']} calls.")
     st.dataframe(pd.DataFrame({
         "Model": ["Logistic regression (production)", "LightGBM (challenger)", "Rule of thumb"],
-        "ROC-AUC": [m["logreg_production"]["roc_auc"], m["lgbm_challenger"]["roc_auc"], m["rule_of_thumb"]["roc_auc"]],
-        "95% CI": [str(m[k]["roc_auc_95ci"]) for k in ["logreg_production", "lgbm_challenger", "rule_of_thumb"]],
-        "PR-AUC": [m["logreg_production"]["pr_auc"], m["lgbm_challenger"]["pr_auc"], m["rule_of_thumb"]["pr_auc"]],
-        "Rolling-CV AUC": [metrics["rolling_origin_cv_auc"][k]["mean"] for k in ["logreg", "lgbm", "rule"]],
+        "ROC-AUC": [ro["models"][k]["roc_auc"] for k in keys],
+        "95% CI": [str(ro["models"][k]["roc_auc_95ci"]) for k in keys],
+        "PR-AUC": [ro["models"][k]["pr_auc"] for k in keys],
+        f"Hold-out AUC ({metrics['test_size']} calls)": [m[k]["roc_auc"] for k in keys],
     }), hide_index=True)
     st.image(str(ROOT / "reports" / "figures" / "performance.png"))
     st.image(str(ROOT / "reports" / "figures" / "explanations.png"))

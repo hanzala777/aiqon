@@ -5,15 +5,13 @@ relative to the average training call) is  coef_j * z_j  where z_j is the standa
 For a linear model with independent features this is exactly the SHAP value, so no
 approximation is involved.
 
-Contributions are summed into operational *factors* (traffic, weather, labour, ...). Grouping is
-deliberate: the traffic features are correlated (queue, scheduled arrivals, occupancy, pressure
-index), so individual coefficients can carry opposite signs while their sum is stable and
-meaningful. Explaining at factor level avoids confusing statements such as "more scheduled
-arrivals lowers risk".
+Contributions are summed into operational *factors* (traffic, weather, labour, ...). The traffic
+features are correlated (queue, scheduled arrivals, occupancy, pressure index); the production model
+constrains all of them to non-negative coefficients (features.MONOTONE_INCREASING), so neither a
+single feature nor a factor can ever claim that "more traffic lowers risk".
 """
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 from src.features import FEED_FIELDS, RAW_INPUTS
@@ -24,10 +22,9 @@ GROUPS = {
     "capacity": ["capacity_berths"],
     "weather": ["forecast_wind_max", "forecast_storm"],
     "labour": ["labor_alert"],
-    # 30-day delay history is positively correlated with congestion on its own (r=0.12) but its
-    # coefficient turns slightly negative once the live queue state is known (a queue's future
-    # depends on its present state, not its past). It is therefore reported inside the "port"
-    # factor rather than as a standalone, sign-confusing driver.
+    # 30-day delay history is positively correlated with congestion on its own (r=0.12); once the live
+    # queue state is known it adds little (a queue's future depends on its present state). Its
+    # coefficient is constrained to be >= 0 and it is reported inside the "port" factor.
     "port": ["port_hist_delay_rate"],
     "vessel": ["vessel_teu"],
     "timing": ["eta_hour", "eta_weekend"],
@@ -150,7 +147,8 @@ def explain_row(model, raw_row: pd.Series, top_k: int = 3) -> dict:
 
     caveats = []
     if conf["agreement"] < 0.6:
-        caveats.append("models fitted on resampled training data disagree -> estimate is unstable")
+        caveats.append("estimate is unstable: models refitted on resampled history"
+                       + (" and plausible values of the missing feeds" if n_miss else "") + " disagree")
     if conf["familiarity"] < 0.8:
         caveats.append("situation is unlike the training data (extrapolation)")
     if n_miss:
